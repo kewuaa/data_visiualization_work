@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools-rust", "setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "data_visiualization_work"
+version = "0.0.1"
+dependencies = ["numpy", "matplotlib"]
+
+[tool.setuptools.package-dir]
+"" = "src/python"
+
+[tool.setuptools.packages.find]
+where = ["src/python"]
+
+[[tool.setuptools-rust.ext-modules]]
+target = "data_visiualization_work.tsne"
+debug = false

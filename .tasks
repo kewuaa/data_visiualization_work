@@ -1,0 +1,11 @@
+[project-run]
+command:python=$(+python) -m src.python.data_visiualization_work
+command:rust=cargo run
+cwd=<root>
+output=terminal
+
+[project-build]
+command:python=$(+python) setup.py build_ext -i
+command:rust=cargo build
+cwd=<root>
+output=terminal
