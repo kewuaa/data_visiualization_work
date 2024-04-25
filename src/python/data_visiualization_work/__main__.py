@@ -9,7 +9,7 @@ from . import tsne
 model = tsne.TSNE(30., True)
 data = datasets.fetch_olivetti_faces()["data"].astype(np.float64) # pyright: ignore
 labels = np.hstack([np.arange(40).reshape(-1, 1) for _ in range(10)]).flatten()
-y = model.fit(data, 2000, 5)
+y = model.fit(data, 3000, 3, 0.8)
 plt.subplot(211)
 plt.title("TSNE")
 plt.scatter(y[:, 0], y[:, 1], 20, labels)
