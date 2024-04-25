@@ -107,7 +107,7 @@ impl TSNE {
         x: ArrayView2<f64>,
         max_iter_num: usize,
         learning_rate: f64,
-        // momentum: f64,
+        momentum: f64,
     ) -> Array2<f64>{
         let x_dist = cal_pairwise_dist(x.view());
         let mut p = self._cal_high_dim_prob(x_dist.view());
@@ -115,23 +115,32 @@ impl TSNE {
             p *= 4.;
         }
         let mut y = Array::random((x.nrows(), 2), Uniform::new(0., 1.));
+        let mut iy: Array2<f64> = Array::zeros((x.nrows(), 2));
         let shape = (x.nrows(), x.nrows(), 2);
         for i in 0..max_iter_num {
-            if i % 100 == 0 {
-                println!("iter num: {}", i);
-            }
-            if self.early_exaggeration && i == (max_iter_num as f64 * 0.1).round() as usize {
+            if self.early_exaggeration && i == 50 as usize {
                 p /= 4.;
             }
             let y_dist = cal_pairwise_dist(y.view());
             let q = self._cal_low_dim_prob(y_dist.view());
-            let pq = (&p - q).insert_axis(Axis(2));
+            let pq = (&p - &q).insert_axis(Axis(2));
             let inv_dist = y_dist.mapv(|v| 1. / (1. + v)).insert_axis(Axis(2));
             let y1 = y.clone().insert_axis(Axis(0));
             let y2 = y.clone().insert_axis(Axis(1));
             let y_diffs = &y1.broadcast(shape).unwrap() - &y2.broadcast(shape).unwrap();
             let grad = y_diffs * &pq.broadcast(shape).unwrap() * &inv_dist.broadcast(shape).unwrap() * 4.;
-            y = y + grad.sum_axis(Axis(1)) * learning_rate;
+            iy = grad.sum_axis(Axis(1)) * learning_rate + iy * momentum;
+            y += &iy;
+            if i % 100 == 0 {
+                let error = ((&p / q).mapv(|v| {
+                    if v.is_nan() {
+                        0.
+                    } else {
+                        v
+                    }
+                }) * &p).sum();
+                println!("error of iter {}: {}", i, error);
+            }
         }
         println!("iter done");
         y
@@ -155,8 +164,9 @@ impl TSNE {
         x: PyReadonlyArray2<'py, f64>,
         max_iter_num: usize,
         learning_rate: f64,
+        momentum: f64,
     ) -> Bound<'py, PyArray2<f64>>{
-        let arr = self.fit(x.as_array(), max_iter_num, learning_rate);
+        let arr = self.fit(x.as_array(), max_iter_num, learning_rate, momentum);
         arr.into_pyarray_bound(py)
     }
 }
